@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 import torch
 
+'''
+In this script matches are identified and stored in a matrix 'matches' (whose i,j-th entry is the number of matches between
+families i and j) and in a tensor 'match_list' (for each match, it stores the names of the two involved families and the
+respective e-values).
+'''
 
 def intersection_size(start1, start2, end1, end2):
     return len(range(max(start1, start2), min(end1, end2)+1))
@@ -20,6 +25,7 @@ df=pd.read_csv("data.csv")
 families=df.family.unique()
 matches=np.zeros((len(families), len(families)))
 ev_tensor=np.ones((len(families), len(families), 2))
+# Sorting the dataframe by protein name allows a faster loop over data points
 df=df.sort_values("protein", ignore_index=True)
 family_index={family: np.where(families==family)[0][0] for family in families}
 family_sizes=np.zeros_like(families, dtype=np.int32)
@@ -49,6 +55,7 @@ for i in range(n-1):
             family_sizes[family_index[family2]]+=1
             break
         jth_row=data[j]
+# Matrix 'matches' has to be made symmetrical
 for i in range(len(families)):
     for j in range(i, len(families)):
         matches[i,j]+=matches[j,i]

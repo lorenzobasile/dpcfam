@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
+from models import loss_approximator, pair_approximator, lift
+
+'''
+Final (approximate) gradient descent to optimize DPCfam thresholds
+'''
 
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -26,62 +31,10 @@ def surviving_matches(thresholds):
 def relative_surviving_matches(thresholds):
     return torch.div(surviving_matches(thresholds), len(match_list)).to(device).reshape(-1,1)
 
-class loss_approximator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(1, 16),
-            nn.LeakyReLU(),
-            nn.Linear(16, 8),
-            nn.LeakyReLU(),
-            nn.Linear(8, 4),
-            nn.LeakyReLU(),
-            nn.Linear(4, 1)
-        )
-
-    def forward(self, x):
-        if x>0:
-            input=torch.log(x)
-            return torch.sigmoid(self.layers(input))
-        else:
-            return torch.ones(1)
-
-class pair_approximator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(2, 16),
-            nn.LeakyReLU(),
-            nn.Linear(16, 8),
-            nn.LeakyReLU(),
-            nn.Linear(8,4),
-            nn.LeakyReLU(),
-            nn.Linear(4, 1)
-        )
-
-    def forward(self, x):
-        if torch.min(x)>0:
-            input=torch.log10(x)
-            return torch.sigmoid(self.layers(input))
-        else:
-            return torch.zeros(1)
-
-
-
-class lift(nn.Module):
-    def __init__(self, dim):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(1, dim, bias=False)
-        )
-
-    def forward(self):
-        return torch.sigmoid(self.layers(torch.ones(1).to(device)))
 
 
 torch.manual_seed(0)
 d=lift(len(families)).to(device)
-print("created lift")
 try:
     d.load_state_dict(torch.load("lift_weights.pt"))
 except FileNotFoundError:
@@ -91,13 +44,13 @@ pair_matches_approximator=[pair_approximator().to(device) for i in range(len(wei
 for i in range(len(families)):
     print(i, end='\r')
     try:
-        family_loss_approximator[i].load_state_dict(torch.load("models/loss%d.pt"%i, map_location=device))
+        family_loss_approximator[i].load_state_dict(torch.load("ldata_models/loss%d.pt"%i, map_location=device))
         family_loss_approximator[i].eval()
     except FileNotFoundError:
         np.delete(familiestoprocess, i)
 for i in range(len(weights)):
     print(i, end='\r')
-    pair_matches_approximator[i].load_state_dict(torch.load("pair_models/pair%d.pt"%i))
+    pair_matches_approximator[i].load_state_dict(torch.load("lmatches_models/pair%d.pt"%i))
     pair_matches_approximator[i].eval()
 optimizer=torch.optim.AdamW(d.parameters(), lr=0.5)
 scheduler=torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=.9999)
@@ -112,12 +65,11 @@ for epoch in range(1000):
     real1=alpha*relative_surviving_matches(t)
     real2=beta*sum([lost_data(t[:,i], i)*family_sizes[i] for i in range(len(families))])/len(df)
     l=l1+l2
-    with open("textfile.txt", "a"):
-        print("\n\nEpoch:"+str(epoch))
-        print("\nRemaining matches: "+str(l1.item())+str(real1.item()))
-        print("\nLost data: "+str(l2.item())+str(real2.item()))
-        print("\nApproximated loss: "+str(l.item()))
-        print("\nReal loss: "+str((real1+real2).item()))
+    print("\n\nEpoch:"+str(epoch))
+    print("\nRemaining matches: "+str(l1.item())+" "+str(real1.item()))
+    print("\nLost data: "+str(l2.item())+" "+str(real2.item()))
+    print("\nApproximated loss: "+str(l.item()))
+    print("\nReal loss: "+str((real1+real2).item()))
     optimizer.zero_grad()
     l.backward()
     optimizer.step()

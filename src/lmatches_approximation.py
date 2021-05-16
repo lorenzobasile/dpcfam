@@ -1,9 +1,16 @@
 import torch
 import numpy as np
 import torch.nn as nn
+from models import pair_approximator
+import os
+
+try:
+    os.mkdir("lmatches_models")
+except OSError:
+    pass
 
 '''
-
+Training of neural approximators for L_matches
 '''
 
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -49,22 +56,6 @@ for i in range(len(weights)):
     print(i, end='\r')
     pair_evalues.append(evalues_per_pair(i))
 
-class pair_approximator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(2, 16),
-            nn.LeakyReLU(),
-            nn.Linear(16, 8),
-            nn.LeakyReLU(),
-            nn.Linear(8,4),
-            nn.LeakyReLU(),
-            nn.Linear(4, 1)
-        )
-
-    def forward(self, x):
-        input=torch.log10(x)
-        return torch.sigmoid(self.layers(input))
 torch.manual_seed(0)
 batch_size=32
 threshold_on_vertex=0.9
@@ -85,7 +76,7 @@ while len(toprocess)>0:
         l_true=pair_surviving_matches(i, x).reshape(-1,1)
         l=loss(l_hat, l_true)
         if l<loss_threshold and pair_matches_approximator[i](torch.ones(1,2).to(device))>threshold_on_vertex:
-            torch.save(pair_matches_approximator[i].state_dict(), "pair_models/pair%d.pt"%i)
+            torch.save(pair_matches_approximator[i].state_dict(), "lmatches_models/pair%d.pt"%i)
             toprocess=np.delete(toprocess, np.where(toprocess==i))
         total_loss+=l.item()
         optimizer_list[i].zero_grad()

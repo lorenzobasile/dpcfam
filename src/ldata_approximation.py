@@ -1,6 +1,20 @@
 import torch
 import numpy as np
 import torch.nn as nn
+import os
+from models import loss_approximator
+
+'''
+Training of neural approximators for L_data
+
+cuda is not used in this file since when using a large dataset the tensor family_evalues becomes extremely large and
+impossible to fit in a GPU memory
+'''
+
+try:
+    os.mkdir("ldata_models")
+except OSError:
+    pass
 
 family_evalues=torch.load('family_evalues.pt')
 family_sizes=torch.load('family_sizes.pt')
@@ -9,23 +23,6 @@ families=np.load('families.npy', allow_pickle=True)
 def lost_data(threshold, family):
     lost_datapoints=torch.stack([torch.sum(torch.gt(family_evalues[family,:], t)) for t in threshold])
     return torch.div(lost_datapoints, family_sizes[family]).reshape(-1, 1)
-
-class loss_approximator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(1, 16),
-            nn.LeakyReLU(),
-            nn.Linear(16, 8),
-            nn.LeakyReLU(),
-            nn.Linear(8, 4),
-            nn.LeakyReLU(),
-            nn.Linear(4, 1)
-        )
-
-    def forward(self, x):
-        input=torch.log(x)
-        return torch.sigmoid(self.layers(input))
 
 torch.manual_seed(0)
 batch_size=32
@@ -50,7 +47,7 @@ while len(toprocess)>0:
         optimizer_list[i].zero_grad()
         l.backward()
         if l<loss_threshold and family_loss_approximator[i](torch.ones(1,1))<threshold_at_one:
-            torch.save(family_loss_approximator[i].state_dict(), "models/loss%d.pt"%i)
+            torch.save(family_loss_approximator[i].state_dict(), "ldata_models/loss%d.pt"%i)
             toprocess=np.delete(toprocess, np.where(toprocess==i))
         optimizer_list[i].step()
     losses.append(total_loss)
