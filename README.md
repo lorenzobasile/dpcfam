@@ -72,7 +72,7 @@ Finally, once the global loss can be approximated by means of neural networks, g
 
 ## Running the codes
 
-Final codes can be found in the folder `src`. The notebooks present in this root folder are outdated.
+Final codes can be found in the folder `src`. Data is not on GitHub because of size issues.
 
 1. run `readfile.py`;
 2. run `match_finder.py`;
