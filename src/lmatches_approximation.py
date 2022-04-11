@@ -66,6 +66,14 @@ loss=torch.nn.MSELoss()
 losses=[]
 toprocess=np.arange(len(weights))
 epoch=0
+
+for i in range(len(toprocess)):
+    try:
+        pair_matches_approximator[i].load_state_dict(torch.load("lmatches_models/pair%d.pt"%i))
+        toprocess=np.delete(toprocess, np.where(toprocess==i))
+    except FileNotFoundError:
+        print(i, " not found")
+
 while len(toprocess)>0:
     epoch+=1
     randomint=torch.randint(high=10, size=(batch_size, 2)).float()

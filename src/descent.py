@@ -50,8 +50,12 @@ for i in range(len(families)):
         np.delete(familiestoprocess, i)
 for i in range(len(weights)):
     print(i, end='\r')
-    pair_matches_approximator[i].load_state_dict(torch.load("lmatches_models/pair%d.pt"%i))
-    pair_matches_approximator[i].eval()
+    try:
+        pair_matches_approximator[i].load_state_dict(torch.load("lmatches_models/pair%d.pt"%i))
+        pair_matches_approximator[i].eval()
+    except FileNotFoundError:
+        print(i, " not found")
+        #np.delete(familiestoprocess, i)
 optimizer=torch.optim.AdamW(d.parameters(), lr=0.5)
 scheduler=torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=.9999)
 losses=[]
