@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 from models import pair_approximator
 import os
+from data import make_dataloader
 
 try:
     os.mkdir("lmatches_models")
@@ -13,9 +14,14 @@ except OSError:
 Training of neural approximators for L_matches
 '''
 
+
+batch_size=32
+
 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 match_list=torch.load('match_list.pt').to(device)
 matches=np.load('matches.npy')
+evalues=torch.load('all_evalues.pt')
+dataloader=make_dataloader(evalues, batch_size*2)
 
 def surviving_matches(thresholds):
     A=torch.index_select(thresholds, 1, match_list[:,0].int())
@@ -57,7 +63,6 @@ for i in range(len(weights)):
     pair_evalues.append(evalues_per_pair(i))
 
 torch.manual_seed(0)
-batch_size=32
 threshold_on_vertex=0.9
 loss_threshold=0.001
 pair_matches_approximator=[pair_approximator().to(device) for i in range(len(weights))]
@@ -66,17 +71,11 @@ loss=torch.nn.MSELoss()
 losses=[]
 toprocess=np.arange(len(weights))
 epoch=0
-
-for i in range(len(toprocess)):
-    try:
-        pair_matches_approximator[i].load_state_dict(torch.load("lmatches_models/pair%d.pt"%i))
-        toprocess=np.delete(toprocess, np.where(toprocess==i))
-    except FileNotFoundError:
-        print(i, " not found")
-
 while len(toprocess)>0:
+    #for x in dataloader:
+        #x=x.reshape(batch_size, 2).to(device)
     epoch+=1
-    randomint=torch.randint(high=10, size=(batch_size, 2)).float()
+    randomint=torch.randint(high=20, size=(batch_size, 2)).float()
     x=(torch.rand(batch_size, 2)*(10**-randomint)).reshape(batch_size, 2).to(device)
     total_loss=0
     for i in toprocess:

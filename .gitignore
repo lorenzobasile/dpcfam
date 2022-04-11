@@ -1,2 +1,13 @@
 .DS_Store
 .ipynb_checkpoints
+
+ldata_models/
+
+lmatches_models/
+
+*.pt
+*.npy
+*.csv
+*.scanned
+
+__pycache__

@@ -55,7 +55,6 @@ for i in range(len(weights)):
         pair_matches_approximator[i].eval()
     except FileNotFoundError:
         print(i, " not found")
-        #np.delete(familiestoprocess, i)
 optimizer=torch.optim.AdamW(d.parameters(), lr=0.5)
 scheduler=torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=.9999)
 losses=[]

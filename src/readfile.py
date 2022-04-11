@@ -11,7 +11,7 @@ query_names=[]
 e_values=[]
 start=[]
 end=[]
-filename="MC_uniref_all.scanned"
+filename="hits_same_clan.scanned"
 with open(filename) as file:
     for i, line in enumerate(file):
         print(i, end='\r')

@@ -14,14 +14,18 @@ matches=np.zeros((len(families), len(families)))
 ev_tensor=np.ones((len(families), len(families), 2))
 family_index={family: np.where(families==family)[0][0] for family in families}
 family_evalues=np.zeros((len(families), np.max(family_sizes)))
+all_evalues=np.zeros((len(data)))
 index=np.zeros(len(families), dtype=np.int)
 for i in range(len(data)):
     print(i, "/", len(data), end='\r')
     family=family_index[data[i,1]]
     evalue=data[i,2]
+    all_evalues[i]=data[i,2]
     family_evalues[family, index[family]]=evalue
     index[family]+=1
 family_evalues=torch.tensor(family_evalues, requires_grad=True)
 family_sizes=torch.tensor(family_sizes, dtype=torch.float, requires_grad=True)
+all_evalues=torch.tensor(all_evalues)
 torch.save(family_evalues, 'family_evalues.pt')
+torch.save(all_evalues, 'all_evalues.pt')
 torch.save(family_sizes, 'family_sizes.pt')

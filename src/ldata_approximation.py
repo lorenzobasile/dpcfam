@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 import os
 from models import loss_approximator
+from data import make_dataloader
 
 '''
 Training of neural approximators for L_data
@@ -16,16 +17,20 @@ try:
 except OSError:
     pass
 
+batch_size=32
+
 family_evalues=torch.load('family_evalues.pt')
 family_sizes=torch.load('family_sizes.pt')
 families=np.load('families.npy', allow_pickle=True)
-
+#evalues=torch.load('all_evalues.pt')
+#dataloader=make_dataloader(evalues, batch_size)
+#print(len(dataloader.dataset))
 def lost_data(threshold, family):
     lost_datapoints=torch.stack([torch.sum(torch.gt(family_evalues[family,:], t)) for t in threshold])
     return torch.div(lost_datapoints, family_sizes[family]).reshape(-1, 1)
 
 torch.manual_seed(0)
-batch_size=32
+
 family_loss_approximator=[loss_approximator() for i in range(len(families))]
 optimizer_list = [torch.optim.AdamW(net.parameters(), lr=0.01) for net in family_loss_approximator]
 loss=torch.nn.MSELoss()
@@ -36,7 +41,10 @@ threshold_at_one=0.05
 epoch=0
 while len(toprocess)>0:
     epoch+=1
-    randomint=torch.randint(high=10, size=(batch_size,)).float()
+    #for x in dataloader:
+        #x=x.reshape(batch_size,1)
+
+    randomint=torch.randint(high=20, size=(batch_size,)).float()
     x=(torch.rand(batch_size)*(10**-randomint)).reshape(batch_size, 1)
     total_loss=0
     for i in toprocess:
