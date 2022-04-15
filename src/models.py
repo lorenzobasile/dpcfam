@@ -19,7 +19,7 @@ class loss_approximator(nn.Module):
             input=torch.log(x)
             return torch.sigmoid(self.layers(input))
         else:
-            return torch.ones((x.shape[0],1))
+            return torch.ones((x.shape[0],1), requires_grad=True)
 
 class pair_approximator(nn.Module):
     def __init__(self):

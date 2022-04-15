@@ -44,7 +44,7 @@ while len(toprocess)>0:
     #for x in dataloader:
         #x=x.reshape(batch_size,1)
 
-    randomint=torch.randint(high=20, size=(batch_size,)).float()
+    randomint=torch.randint(high=10, size=(batch_size,)).float()
     x=(torch.rand(batch_size)*(10**-randomint)).reshape(batch_size, 1)
     total_loss=0
     for i in toprocess:

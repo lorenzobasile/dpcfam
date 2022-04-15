@@ -75,13 +75,14 @@ while len(toprocess)>0:
     #for x in dataloader:
         #x=x.reshape(batch_size, 2).to(device)
     epoch+=1
-    randomint=torch.randint(high=20, size=(batch_size, 2)).float()
+    randomint=torch.randint(high=10, size=(batch_size, 2)).float()
     x=(torch.rand(batch_size, 2)*(10**-randomint)).reshape(batch_size, 2).to(device)
     total_loss=0
     for i in toprocess:
         l_hat=pair_matches_approximator[i](x)
         l_true=pair_surviving_matches(i, x).reshape(-1,1)
         l=loss(l_hat, l_true)
+        print(l_hat.shape, l_true.shape)
         if l<loss_threshold and pair_matches_approximator[i](torch.ones(1,2).to(device))>threshold_on_vertex:
             torch.save(pair_matches_approximator[i].state_dict(), "lmatches_models/pair%d.pt"%i)
             toprocess=np.delete(toprocess, np.where(toprocess==i))
